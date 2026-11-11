@@ -10,6 +10,10 @@ All versions prior to 0.0.9 are untracked.
 
 ### Fixed
 
+* Malformed `pylock.toml` files (an invalid `lock-version` or package version,
+  or `packages` that is not an array of tables) now produce a normal
+  dependency source error instead of an uncaught exception
+
 * Editable requirements skipped with `--skip-editable` no longer require a hash
   when auditing hashed requirements files
   ([#1024](https://github.com/pypa/pip-audit/issues/1024))

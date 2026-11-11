@@ -32,6 +32,10 @@ class TestPyLockSource:
             ("pylock.invalid-version.toml", "lockfile version 666 is not supported"),
             ("pylock.missing-packages.toml", "missing packages in lockfile"),
             ("pylock.package-missing-name.toml", "invalid package #0: no name"),
+            ("pylock.lock-version-not-a-version.toml", "invalid lock-version in lockfile"),
+            ("pylock.packages-not-an-array.toml", "packages in lockfile is not an array"),
+            ("pylock.package-not-a-table.toml", "invalid package #0: not a table"),
+            ("pylock.package-invalid-version.toml", "invalid package #0: invalid version"),
         ],
     )
     def test_invalid_pylock(self, asset, name, error):

@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import tomli
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 
 from pip_audit._dependency_source import DependencyFixError, DependencySource, DependencySourceError
 from pip_audit._fix import ResolvedFixVersion
@@ -56,13 +56,21 @@ class PyLockSource(DependencySource):
         if not lock_version:
             raise PyLockSourceError(f"{filename}: missing lock-version in lockfile")
 
-        lock_version = Version(lock_version)
+        try:
+            lock_version = Version(lock_version)
+        except (InvalidVersion, TypeError) as e:
+            raise PyLockSourceError(
+                f"{filename}: invalid lock-version in lockfile: {lock_version!r}"
+            ) from e
         if lock_version.major != 1:
             raise PyLockSourceError(f"{filename}: lockfile version {lock_version} is not supported")
 
         packages = pylock.get("packages")
         if not packages:
             raise PyLockSourceError(f"{filename}: missing packages in lockfile")
+
+        if not isinstance(packages, list):
+            raise PyLockSourceError(f"{filename}: packages in lockfile is not an array of tables")
 
         try:
             yield from self._collect_from_packages(packages)
@@ -76,13 +84,22 @@ class PyLockSource(DependencySource):
         Raises a `PyLockSourceError` on any errors.
         """
         for idx, package in enumerate(packages):
+            if not isinstance(package, dict):
+                raise PyLockSourceError(f"invalid package #{idx}: not a table")
+
             name = package.get("name")
             if not name:
                 raise PyLockSourceError(f"invalid package #{idx}: no name")
 
             version = package.get("version")
             if version:
-                yield ResolvedDependency(name, Version(version))
+                try:
+                    parsed_version = Version(version)
+                except (InvalidVersion, TypeError) as e:
+                    raise PyLockSourceError(
+                        f"invalid package #{idx}: invalid version {version!r}"
+                    ) from e
+                yield ResolvedDependency(name, parsed_version)
             else:
                 # Versions are optional in PEP 751, e.g. for source tree specifiers.
                 # We mark these as skipped.

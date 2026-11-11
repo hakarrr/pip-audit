@@ -1,0 +1,5 @@
+lock-version = "not-a-version"
+
+[[packages]]
+name = "attrs"
+version = "25.1.0"
